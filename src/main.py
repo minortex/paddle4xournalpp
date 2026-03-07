@@ -1,5 +1,6 @@
 import sys
 import os
+import argparse
 import fitz  # PyMuPDF
 from rapidocr import RapidOCR, EngineType
 
@@ -102,38 +103,48 @@ def process_image(engine, file_path):
 
 def main():
     """Main function to handle command-line arguments and orchestrate OCR processing."""
-    if len(sys.argv) < 3:
-        print("Usage: python main.py <input_path> <output_path> [--dpi <value>]")
-        sys.exit(1)
-
-    input_path = sys.argv[1]
-    output_path = sys.argv[2]
-    dpi = 288  # Default DPI
-
-    # Basic argument parsing for --dpi
-    if '--dpi' in sys.argv:
-        try:
-            dpi_index = sys.argv.index('--dpi') + 1
-            if dpi_index < len(sys.argv):
-                dpi = int(sys.argv[dpi_index])
-            else:
-                print("Error: --dpi flag requires a value.")
-                sys.exit(1)
-        except (ValueError, IndexError):
-            print("Error: Invalid DPI value.")
-            sys.exit(1)
+    parser = argparse.ArgumentParser(description="Process PDF or image files with OCR and embed text into the PDF.")
     
+    parser.add_argument('--pathfile', type=str, help='Path to a UTF-8 encoded file containing input and output paths on separate lines.')
+    parser.add_argument('--path', type=str, help='Path to the input PDF or image file.')
+    parser.add_argument('--output', type=str, help='Path to the output PDF file.')
+    parser.add_argument('--dpi', type=int, default=288, help='DPI for rendering PDF pages. Default is 288.')
+
+    args = parser.parse_args()
+
+    input_path = args.path
+    output_path = args.output
+    dpi = args.dpi
+
+    if args.pathfile:
+        if not os.path.exists(args.pathfile):
+            print(f"Error: Path file not found at {args.pathfile}")
+            sys.exit(1)
+        with open(args.pathfile, 'r', encoding='utf-8') as f:
+            lines = f.read().strip().splitlines()
+            if len(lines) >= 1:
+                input_path = lines[0]
+            if len(lines) >= 2:
+                output_path = lines[1]
+    
+    if not input_path:
+        print("Error: Input path is required. Use --path or --pathfile.")
+        parser.print_help()
+        sys.exit(1)
+        
     if not os.path.exists(input_path):
-        print(f"Error: File not found at {input_path}")
+        print(f"Error: Input file not found at {input_path}")
         sys.exit(1)
 
     engine = initialize_ocr_engine()
     
     file_ext = os.path.splitext(input_path)[-1].lower()
     if file_ext == '.pdf':
+        if not output_path:
+            print("Error: Output path is required for PDF processing. Use --output or --pathfile.")
+            sys.exit(1)
         process_pdf(engine, input_path, output_path, dpi)
     else:
-        # For simplicity, image processing won't save a new file in this example
         print("Processing single image (output will not be saved to a new file).")
         process_image(engine, input_path)
 
