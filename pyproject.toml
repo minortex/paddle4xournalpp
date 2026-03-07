@@ -1,0 +1,23 @@
+[project]
+name = "paddle4xournalpp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "openvino>=2026.0.0",
+    "pymupdf>=1.27.1",
+    "rapidocr>=3.7.0",
+    "rapidocr-onnxruntime>=1.4.4",
+]
+
+[project.scripts]
+pdf-ocr = "pdf_ocr.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdf_ocr"]
+
