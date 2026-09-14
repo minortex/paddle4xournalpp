@@ -82,10 +82,15 @@ def process_pdf(engine, file_path, output_path, dpi=288):
     doc.save(output_path, garbage=4, deflate=True)
     doc.close()
     print("Output PDF saved successfully.")            
-def process_image(engine, file_path):
-    """Processes a single image file."""
+def process_image(engine, file_path, output_path):
+    """Convert an image to PDF and embed the OCR text as an invisible layer."""
     result = engine(file_path)
-    
+
+    image = fitz.Pixmap(file_path)
+    doc = fitz.open()
+    page = doc.new_page(width=image.width, height=image.height)
+    page.insert_image(page.rect, filename=file_path)
+
     print(f"\n--- OCR Results for {os.path.basename(file_path)} ---")
     if result and result.txts:
         for i in range(len(result.txts)):
@@ -95,11 +100,31 @@ def process_image(engine, file_path):
             print(f"  Text: {text}")
             print(f"  Box: {box}")
             print(f"  Score: {score:.4f}")
+
+            # The page uses the image's pixel dimensions, so OCR coordinates
+            # can be used directly for the text layer.
+            rect = fitz.Rect(
+                min(point[0] for point in box),
+                min(point[1] for point in box),
+                max(point[0] for point in box),
+                max(point[1] for point in box),
+            )
+            font_size = max(round(rect.height * 0.8), 4)
+            page.insert_text(
+                rect.bl,
+                text,
+                fontname="china-ss",
+                fontsize=font_size,
+                render_mode=3,
+            )
     else:
         print("No text recognized.")
 
-    # if result:
-        # result.vis("vis_result.jpg")
+    print(f"\nSaving output to {output_path}...")
+    doc.save(output_path, garbage=4, deflate=True)
+    doc.close()
+    image = None
+    print("Output PDF saved successfully.")
 
 
 def default_output_path(input_path):
@@ -145,14 +170,14 @@ def main():
     engine = initialize_ocr_engine()
     
     file_ext = os.path.splitext(input_path)[-1].lower()
+    if not output_path:
+        output_path = default_output_path(input_path)
+        print(f"No output path specified. Using {output_path}")
+
     if file_ext == '.pdf':
-        if not output_path:
-            output_path = default_output_path(input_path)
-            print(f"No output path specified. Using {output_path}")
         process_pdf(engine, input_path, output_path, dpi)
     else:
-        print("Processing single image (output will not be saved to a new file).")
-        process_image(engine, input_path)
+        process_image(engine, input_path, output_path)
 
 if __name__ == "__main__":
     main()
