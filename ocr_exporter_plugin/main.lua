@@ -53,7 +53,7 @@ function onPathSelected(finalPath)
 	-- -e: 执行后面的指令
 	-- 指令链逻辑：执行 OCR -> 无论成功与否都删除临时 PDF -> 打印结束语
 	local internalCmd = string.format(
-		'%s --path "%s" --output "%s"; rm -f "%s"; echo "-----------------------"; echo "处理完成。按下任意按键退出。";read -n 1 -s -r',
+		'%s --input "%s" --output "%s"; rm -f "%s"; echo "-----------------------"; echo "处理完成。按下任意按键退出。";read -n 1 -s -r',
 		OCR_BINARY,
 		inputPdf,
 		finalPath,

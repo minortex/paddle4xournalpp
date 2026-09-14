@@ -101,19 +101,25 @@ def process_image(engine, file_path):
     # if result:
         # result.vis("vis_result.jpg")
 
+
+def default_output_path(input_path):
+    """Return the default PDF output path for an input file."""
+    input_name = os.path.splitext(os.path.basename(input_path))[0]
+    return os.path.join(os.getcwd(), f"{input_name}_ocr.pdf")
+
 def main():
     """Main function to handle command-line arguments and orchestrate OCR processing."""
     parser = argparse.ArgumentParser(description="Process PDF or image files with OCR and embed text into the PDF.")
     
     parser.add_argument('--pathfile', type=str, help='Path to a UTF-8 encoded file containing input and output paths on separate lines.')
-    parser.add_argument('--path', type=str, help='Path to the input PDF or image file.')
-    parser.add_argument('--output', type=str, help='Path to the output PDF file.')
+    parser.add_argument('-i', '--input', dest='input_path', type=str, help='Path to the input PDF or image file.')
+    parser.add_argument('-o', '--output', dest='output_path', type=str, help='Path to the output PDF file.')
     parser.add_argument('--dpi', type=int, default=288, help='DPI for rendering PDF pages. Default is 288.')
 
     args = parser.parse_args()
 
-    input_path = args.path
-    output_path = args.output
+    input_path = args.input_path
+    output_path = args.output_path
     dpi = args.dpi
 
     if args.pathfile:
@@ -128,7 +134,7 @@ def main():
                 output_path = lines[1]
     
     if not input_path:
-        print("Error: Input path is required. Use --path or --pathfile.")
+        print("Error: Input path is required. Use --input or --pathfile.")
         parser.print_help()
         sys.exit(1)
         
@@ -141,8 +147,8 @@ def main():
     file_ext = os.path.splitext(input_path)[-1].lower()
     if file_ext == '.pdf':
         if not output_path:
-            print("Error: Output path is required for PDF processing. Use --output or --pathfile.")
-            sys.exit(1)
+            output_path = default_output_path(input_path)
+            print(f"No output path specified. Using {output_path}")
         process_pdf(engine, input_path, output_path, dpi)
     else:
         print("Processing single image (output will not be saved to a new file).")
